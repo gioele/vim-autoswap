@@ -32,6 +32,9 @@ let loaded_autoswap = 1
 let s:save_cpo = &cpo
 set cpo&vim
 
+let s:AS_sent_with_no_response = 0
+let s:AS_found_server_id = ""
+
 " Invoke the behaviour whenever a swapfile is detected...
 "
 augroup AutoSwap
@@ -103,6 +106,8 @@ endfunction
 function! AS_DetectActiveWindow (filename)
 	if has('macunix')
 		let active_window = AS_DetectActiveWindow_Mac(a:filename)
+	elseif has('win32')
+		let active_window = AS_DetectActiveWindow_Windows(a:filename)
 	elseif has('unix')
 		let active_window = AS_DetectActiveWindow_Linux(a:filename)
 	endif
@@ -125,12 +130,63 @@ function! AS_DetectActiveWindow_Mac (filename)
 	return (active_window =~ 'window' ? active_window : "")
 endfunction
 
+" WINDOWS: Detection function for Windows, uses +clientserver
+function! AS_DetectActiveWindow_Windows (filename)
+	augroup AutoSwap_Windows
+		autocmd!
+		autocmd RemoteReply * call AS_ProcessReply(expand("<amatch>"))
+	augroup END
+	let l:serverlist = substitute(serverlist(), v:servername . "\n", "", "g")
+	let l:serverlist = substitute(l:serverlist, "\n", ",", "g")
+	let l:server_id_to_server_dict = {}
+	for server in split(l:serverlist, ",")
+		call remote_send(server, ":call AS_FileLoaded('" . expand("%:p") . "')<CR>", "server_id")
+		let l:server_id_to_server_dict[server_id] = server
+		let s:AS_sent_with_no_response += 1
+	endfor
+	let l:timeout = 2
+	while 0 != s:AS_sent_with_no_response
+		if 0 == l:timeout
+			break
+		endif
+		sleep 1
+		let l:timeout -= 1
+	endwhile
+	augroup AutoSwap_Windows
+		autocmd!
+	augroup END
+	if 0 != strlen(s:AS_found_server_id)
+		return l:server_id_to_server_dict[s:AS_found_server_id]
+	else
+		return ""
+endfunction
+
+function! AS_FileLoaded(filename)
+	let l:clientid = expand("<client>")
+	if buflisted(a:filename)
+		let l:bufnr = bufnr(a:filename)
+		execute "buffer! " . l:bufnr
+		call server2client(l:clientid, "LOADED")
+		call foreground()
+	else
+		call server2client(l:clientid, "NOT LOADED")
+	endif
+endfunction
+
+function! AS_ProcessReply(server_id)
+	if "LOADED" == remote_read(a:server_id)
+		let s:AS_found_server_id = a:server_id
+	endif
+	let s:AS_sent_with_no_response -= 1
+endfunction
 
 " Switch to terminal window specified...
 "
 function! AS_SwitchToActiveWindow (active_window)
 	if has('macunix')
 		call AS_SwitchToActiveWindow_Mac(a:active_window)
+	elseif has('win32')
+		call AS_SwitchToActiveWindow_Windows(a:active_window)
 	elseif has('unix')
 		call AS_SwitchToActiveWindow_Linux(a:active_window)
 	endif
@@ -146,6 +202,10 @@ function! AS_SwitchToActiveWindow_Mac (active_window)
 	call system('osascript -e ''tell application "Terminal" to set frontmost of '.a:active_window.' to true''')
 endfunction
 
+" WINDOWS: Switch function for Windows, uses +clientserver
+function! AS_SwitchToActiveWindow_Windows (active_window)
+	call remote_foreground(a:active_window)
+endfunction
 
 " Restore previous external compatibility options
 let &cpo = s:save_cpo
