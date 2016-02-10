@@ -145,7 +145,7 @@ function! AS_DetectActiveWindow_Linux (swapname)
 	if (len(pid) == 0)
 		return ''
 	endif
-	for servername in split(serverlist())
+	for servername in split(serverlist(), "\n")
 		if pid[0] == remote_expr(servername, 'getpid()')
 			return remote_expr(servername, 'v:windowid')
 		endif
