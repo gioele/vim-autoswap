@@ -150,7 +150,7 @@ function! AS_DetectActiveWindow_Linux (swapname)
 		return ''
 	endif
 	let active_window = matchstr('\n'.env[0].'\n', '\nWINDOWID=\zs\(0x\)\?\d\+\ze\n')
-	return (active_window =~ '^\(0x\)\?\d\+$' ? active_window : "")
+	return (active_window =~ '\v^(0x)?\x+$' ? active_window : "")
 endfunction
 
 " MAC: Detection function for Mac OSX, uses osascript
