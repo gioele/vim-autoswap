@@ -139,12 +139,17 @@ function! AS_DetectActiveWindow_Tmux (swapname)
 	return window[0]
 endfunction
 
-" LINUX: Detection function for Linux, uses proc fs and WINDOWID env var
+" LINUX: Detection function for Linux, uses +clientserver, proc fs and WINDOWID env var
 function! AS_DetectActiveWindow_Linux (swapname)
 	let pid = systemlist('fuser '.a:swapname.' 2>/dev/null | grep -o "[0-9]*"')
 	if (len(pid) == 0)
 		return ''
 	endif
+	for servername in split(serverlist())
+		if pid[0] == remote_expr(servername, 'getpid()')
+			return remote_expr(servername, 'v:windowid')
+		endif
+	endfor
 	let env = readfile('/proc/'.pid[0].'/environ', 'b')
 	if (len(env) == 0)
 		return ''
