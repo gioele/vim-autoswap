@@ -154,15 +154,15 @@ function! AS_DetectActiveWindow_Linux (swapname)
 				return remote_expr(servername, 'v:windowid')
 			endif
 		endfor
-	else
-		" read WINDOWID from the pid's env
-		let env = readfile('/proc/'.pid.'/environ', 'b')
-		if (len(env) == 0)
-			return ''
-		endif
-		let active_window = matchstr('\n'.env[0].'\n', '\nWINDOWID=\zs\(0x\)\?\d\+\ze\n')
-		return (active_window =~ '\v^(0x)?\x+$' ? active_window : "")
 	endif
+
+	" read WINDOWID from the pid's env
+	let env = readfile('/proc/'.pid.'/environ', 'b')
+	if (len(env) == 0)
+		return ''
+	endif
+	let active_window = matchstr('\n'.env[0].'\n', '\nWINDOWID=\zs\(0x\)\?\d\+\ze\n')
+	return (active_window =~ '\v^(0x)?\x+$' ? active_window : "")
 endfunction
 
 " MAC: Detection function for Mac OSX, uses osascript
