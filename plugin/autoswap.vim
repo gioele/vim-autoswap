@@ -141,7 +141,7 @@ endfunction
 
 " LINUX: Detection function for Linux, uses +clientserver, proc fs and WINDOWID env var
 function! AS_DetectActiveWindow_Linux (swapname)
-	let pid = systemlist('fuser '.a:swapname.' 2>/dev/null | grep -o "[0-9]*"')
+	let pid = split(system('fuser '.a:swapname.' 2>/dev/null | grep -o "[0-9]*"'), '\n')
 	if (len(pid) == 0)
 		return ''
 	endif
