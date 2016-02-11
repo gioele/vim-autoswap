@@ -147,11 +147,15 @@ function! AS_DetectActiveWindow_Linux (swapname)
 	endif
 	let pid = pids[0]
 
+	" get the window ID from the remote window, if +clientserver
+	" functionality is available
 	for servername in split(serverlist(), "\n")
 		if pid == remote_expr(servername, 'getpid()')
 			return remote_expr(servername, 'v:windowid')
 		endif
 	endfor
+
+	" read WINDOWID from the pid's env if +clientserver is not available
 	let env = readfile('/proc/'.pid.'/environ', 'b')
 	if (len(env) == 0)
 		return ''
