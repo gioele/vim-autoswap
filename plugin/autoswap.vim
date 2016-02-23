@@ -117,7 +117,7 @@ function! AS_DetectActiveWindow (filename, swapname)
 	elseif has('macunix')
 		let active_window = AS_DetectActiveWindow_Mac(a:filename)
 	elseif has('unix')
-		let active_window = AS_DetectActiveWindow_Linux(a:filename)
+		let active_window = AS_DetectActiveWindow_Linux(a:swapname)
 	endif
 	return active_window
 endfunction
@@ -139,12 +139,30 @@ function! AS_DetectActiveWindow_Tmux (swapname)
 	return window[0]
 endfunction
 
-" LINUX: Detection function for Linux, uses mwctrl
-function! AS_DetectActiveWindow_Linux (filename)
-	let shortname = fnamemodify(a:filename,":t")
-	let find_win_cmd = 'wmctrl -l | grep -i " '.shortname.' .*vim" | tail -n1 | cut -d" " -f1'
-	let active_window = system(find_win_cmd)
-	return (active_window =~ '0x' ? active_window : "")
+" LINUX: Detection function for Linux, uses +clientserver, proc fs and WINDOWID env var
+function! AS_DetectActiveWindow_Linux (swapname)
+	let pids = split(system('fuser '.a:swapname.' 2>/dev/null | grep -o "[0-9]*"'), '\n')
+	if (len(pids) == 0)
+		return ''
+	endif
+	let pid = pids[0]
+
+	if (has('clientserver'))
+		" get the window ID from the remote window
+		for servername in split(serverlist(), "\n")
+			if pid == remote_expr(servername, 'getpid()')
+				return remote_expr(servername, 'v:windowid')
+			endif
+		endfor
+	endif
+
+	" read WINDOWID from the pid's env
+	let env = readfile('/proc/'.pid.'/environ', 'b')
+	if (len(env) == 0)
+		return ''
+	endif
+	let active_window = matchstr('\n'.env[0].'\n', '\nWINDOWID=\zs\(0x\)\?\d\+\ze\n')
+	return (active_window =~ '\v^(0x)?\x+$' ? active_window : "")
 endfunction
 
 " MAC: Detection function for Mac OSX, uses osascript
