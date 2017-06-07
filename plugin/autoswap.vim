@@ -128,7 +128,7 @@ function! AS_DetectActiveWindow_Tmux (swapname)
 	if (len(pid) == 0)
 		return ''
 	endif
-	let tty = systemlist('ps h '.pid[0].' 2>/dev/null | sed -rn "s/^ *[0-9]+ +([^ ]+).*/\1/p" 2>/dev/null')
+	let tty = systemlist('ps h '.pid[0].' 2>/dev/null | tail -n +2 | head -n 1 | sed -E "s/^ *[0-9]+ +([^ ]+).*/\1/p" 2>/dev/null')
 	if (len(tty) == 0)
 		return ''
 	endif
