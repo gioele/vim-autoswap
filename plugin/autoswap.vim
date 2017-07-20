@@ -128,11 +128,12 @@ function! AS_DetectActiveWindow_Tmux (swapname)
 	if (len(pid) == 0)
 		return ''
 	endif
-	let tty = systemlist('ps h '.pid[0].' 2>/dev/null | sed -rn "s/^ *[0-9]+ +([^ ]+).*/\1/p" 2>/dev/null')
+	let tty = systemlist('ps h '.pid[0].' 2>/dev/null | tail -n +2 | head -n 1')
 	if (len(tty) == 0)
 		return ''
 	endif
-	let window = systemlist('tmux list-panes -aF "#{pane_tty} #{window_index} #{pane_index}" | grep -F "'.tty[0].'" 2>/dev/null')
+	let tty_id = split(tty[0], '\s\+')[1]
+	let window = systemlist('tmux list-panes -aF "#{pane_tty} #{window_index} #{pane_index}" | grep -F "'.tty_id.'" 2>/dev/null')
 	if (len(window) == 0)
 		return ''
 	endif
