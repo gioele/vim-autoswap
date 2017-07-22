@@ -107,6 +107,24 @@ function! AS_RunningTmux ()
 	return 0
 endfunction
 
+" MAC: Return an identifier for the terminal application used to run Vim.
+" If the terminal application cannot be detected, suppose that
+" we are running inside the default MacOS's application "Terminal"
+function! AS_TerminalAppName_Mac()
+	let codename = $TERM_PROGRAM
+	let terminal_app_name = "Terminal"
+
+	if (codename == 'Apple_Terminal')
+		let terminal_app_name = "Terminal"
+	elseif (codename == 'iTerm.app')
+		let terminal_app_name = 'iTerm2'
+	elseif (codename == 'Hyper')
+		let terminal_app_name = 'Hyper'
+	endif
+
+	return terminal_app_name
+endfunction
+
 " Return an identifier for a terminal window already editing the named file
 " (Should either return a string identifying the active window,
 "  or else return an empty string to indicate "no active window")...
@@ -156,7 +174,8 @@ endfunction
 " MAC: Detection function for Mac OSX, uses osascript
 function! AS_DetectActiveWindow_Mac (filename)
 	let shortname = fnamemodify(a:filename,":t")
-	let active_window = system('osascript -e ''tell application "Terminal" to every window whose (name begins with "'.shortname.' " and name ends with "VIM")''')
+	let terminal_app_name = AS_TerminalAppName_Mac()
+	let active_window = system('osascript -e ''tell application "'.terminal_app_name.'" to every window whose (name begins with "'.shortname.' " and name ends with "VIM")''')
 	let active_window = substitute(active_window, '^window id \d\+\zs\_.*', '', '')
 	return (active_window =~ 'window' ? active_window : "")
 endfunction
@@ -187,7 +206,8 @@ endfunction
 
 " MAC: Switch function for Mac, uses osascript
 function! AS_SwitchToActiveWindow_Mac (active_window)
-	call system('osascript -e ''tell application "Terminal" to set frontmost of '.a:active_window.' to true''')
+	let terminal_app_name = AS_TerminalAppName_Mac()
+	call system('osascript -e ''tell application "'.terminal_app_name.'" to set frontmost of '.a:active_window.' to true''')
 endfunction
 
 
