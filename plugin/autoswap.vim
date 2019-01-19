@@ -57,7 +57,7 @@ function! AS_HandleSwapfile (filename, swapname)
 	if (strlen(active_window) > 0)
 		call AS_DelayedMsg('Switched to existing session in another window')
 		call AS_SwitchToActiveWindow(active_window)
-		let v:swapchoice = 'q'
+		call Exit()
 
 	" Otherwise, if swapfile is older than file itself, just get rid of it...
 	elseif getftime(v:swapname) < getftime(a:filename)
@@ -72,6 +72,15 @@ function! AS_HandleSwapfile (filename, swapname)
 	endif
 endfunction
 
+
+function! Exit()
+	if has("nvim") && exists("*GuiClose")
+		let v:swapchoice = 'o'
+		autocmd BufEnter * call GuiClose() | qall!
+	else
+		let v:swapchoice = 'q'
+	endif
+endfunction
 
 " Print a message after the autocommand completes
 " (so you can see it, but don't have to hit <ENTER> to continue)...
