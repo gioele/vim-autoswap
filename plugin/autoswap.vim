@@ -75,8 +75,14 @@ endfunction
 
 function! Exit()
 	if has("nvim") && exists("*GuiClose")
-		let v:swapchoice = 'o'
-		autocmd BufEnter * call GuiClose() | qall!
+		let l:num_buffers = len(getbufinfo({'buflisted':1}))
+		let l:num_windows = winnr('$')
+		if l:num_buffers == 1 && l:num_windows == 1
+			let v:swapchoice = 'o'
+			autocmd BufEnter * call GuiClose() | q
+		else
+			let v:swapchoice = 'q'
+		endif
 	else
 		let v:swapchoice = 'q'
 	endif
