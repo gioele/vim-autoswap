@@ -147,10 +147,11 @@ function! AS_DetectActiveWindow_Tmux (swapname)
 	return window[0]
 endfunction
 
-" LINUX: Detection function for Linux, uses mwctrl
+" LINUX: Detection function for Linux, uses wmctrl
 function! AS_DetectActiveWindow_Linux (filename)
-	let shortname = fnamemodify(a:filename,":t")
-	let find_win_cmd = 'wmctrl -l | grep -i " '.shortname.' .*vim" | tail -n1 | cut -d" " -f1'
+	let basename = fnamemodify(a:filename,":t")
+	let dirname = fnamemodify(a:filename,":p:h")
+	let find_win_cmd = 'wmctrl -l | grep " '.basename.' ('.dirname.') - G\?VIM" | tail -n1 | cut -d" " -f1'
 	let active_window = system(find_win_cmd)
 	return (active_window =~ '0x' ? active_window : "")
 endfunction
